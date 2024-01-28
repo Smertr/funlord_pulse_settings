@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Settings</title>
+    <style>
+        /* Add your custom styles here */
+        #formDataContainer {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px; /* Adjust the width as needed */
+        }
+
+        #formData label {
+            display: inline-block;
+            width: 1500px; /* Adjust the width as needed */
+            font-weight: bold;
+        }
+
+        #formData input {
+            width: calc(100% - 110px); /* Adjust the width as needed */
+            margin-bottom: 5px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        #updateButton {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <label for="qrInput">QR:</label>
+    <input type="text" id="qrInput" name="QR" placeholder="Enter text">
+    <button onclick="logQRText()">GÖNDER</button>
+
+    <!-- Container for the form -->
+    <div id="formDataContainer"></div>
+
+    <!-- Update button -->
+    <button id="updateButton">Update Form</button>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.988.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.3.1"></script>
+
+    <script>
+        var accesKey = "";
+        var qrText = "";
+
+        function logQRText() {
+            // Get the value from the input field
+            qrText = document.getElementById("qrInput").value;
+            callQR(qrText);
+        }
+
+        function callQR(qr) {
+            const apiEndpoint = 'https://hhvetbir85.execute-api.eu-central-1.amazonaws.com/update_pulse/update_pulse';
+            const url = `${apiEndpoint}?qr=${qr}`;
+            console.log(url);
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    console.log("data length: " + Object.keys(data).length);
+                    if(Object.keys(data).length >0){
+                        displayFormData(data); // Pass data to display function
+                    }else{
+                        alert("Böyle Bir QR Bulunamadı!")
+                    }
+
+                    
+                })
+                .catch(error => console.error(error));
+        }
+
+        function displayFormData(data) {
+            // Create a form container
+            var formContainer = document.createElement('div');
+            formContainer.setAttribute('id', 'formData');
+
+            // Create a form
+            var form = document.createElement('form');
+
+            // Iterate over data and create form fields with titles
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    var label = document.createElement('label');
+                    label.innerHTML = key + ": "; // Title of the value
+                    form.appendChild(label);
+
+                    var input = document.createElement('input');
+                    input.setAttribute('type', 'text');
+                    input.setAttribute('value', data[key]);
+                    input.setAttribute('name', key);
+                    console.log(key);
+                    if((key != "TETİK SÜRESİ") &&  (key != "TETİK ADEDİ") &&  (key != "BEKLEME (sn)")){
+                        input.setAttribute('readonly', true); // Make fields readonly
+                    }
+                    
+                    form.appendChild(input);
+
+                    form.appendChild(document.createElement('br')); // Line break for vertical layout
+                }
+            }
+
+            // Append the form to the form container
+            formContainer.appendChild(form);
+
+            // Append the form container to the formDataContainer div
+            var formDataContainer = document.getElementById('formDataContainer');
+            formDataContainer.innerHTML = ''; // Clear previous form, if any
+            formDataContainer.appendChild(formContainer);
+        }
+
+        // Add event listener for the update button
+        document.getElementById('updateButton').addEventListener('click', function() {
+            var formData = getFormDataAsJSON();
+            var confirmation = confirm("Are you sure you want to update the form?");
+            if (confirmation) {
+                console.log(formData);
+            }
+        });
+
+        // Function to get form data as JSON
+        function getFormDataAsJSON() {
+            var formData = {};
+            var inputs = document.querySelectorAll('#formData input');
+            inputs.forEach(function(input) {
+                formData[input.getAttribute('name')] = input.value;
+            });
+            return formData//JSON.stringify(formData);
+        }
+    </script>
+
+</body>
+</html>
